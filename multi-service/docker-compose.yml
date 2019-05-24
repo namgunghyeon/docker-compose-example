@@ -1,0 +1,31 @@
+version: "3"
+
+networks:
+  vpcbr:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.5.0.0/16
+
+services:
+  postgres:
+    image: postgres:9.6.10
+    environment:
+      - POSTGRES_PASSWORD=admin@123
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=rec_db
+    ports:
+      - "5431:5432"
+    networks:
+      vpcbr:
+        ipv4_address: 10.5.0.6
+    volumes:
+      - ./postgres/data:/var/lib/postgresql
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/1-init.sql
+
+  test:
+    depends_on:
+      - postgres
+    build: service/<>
+    networks:
+      - vpcbr
