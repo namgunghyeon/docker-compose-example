@@ -1,0 +1,115 @@
+version: '3.6'
+
+volumes:
+  redis-host1:
+  redis-host2:
+  redis-host3:
+  redis-host4:
+  redis-host5:
+  redis-host6:
+  redis-haproxy:
+
+networks:
+
+  redisnet:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.0.0.0/16
+
+services:
+
+  redis-1:
+    container_name: redis-1
+    build: redis-1
+    command: redis-server /etc/redis/redis.conf
+    ports:
+      - 7000:7000
+    volumes:
+      - redis-host1:/data
+    networks:
+      redisnet:
+        ipv4_address: 10.0.0.2
+
+  redis-2:
+    container_name: redis-2
+    build: redis-2
+    command: redis-server /etc/redis/redis.conf
+    ports:
+      - 7001:7001
+    volumes:
+      - redis-host2:/data
+    depends_on:
+      - redis-1
+    networks:
+      redisnet:
+        ipv4_address: 10.0.0.3
+
+  redis-3:
+    container_name: redis-3
+    build: redis-3
+    command: redis-server /etc/redis/redis.conf
+    ports:
+      - 7002:7002
+    volumes:
+      - redis-host3:/data
+    depends_on:
+      - redis-2
+    networks:
+      redisnet:
+        ipv4_address: 10.0.0.4
+
+  redis-4:
+    container_name: redis-4
+    build: redis-4
+    command: redis-server /etc/redis/redis.conf
+    ports:
+      - 7003:7003
+    volumes:
+      - redis-host4:/data
+    depends_on:
+      - redis-3
+    networks:
+      redisnet:
+        ipv4_address: 10.0.0.5
+
+  redis-5:
+    container_name: redis-5
+    build: redis-5
+    command: redis-server /etc/redis/redis.conf
+    ports:
+      - 7004:7004
+    depends_on:
+      - redis-4
+    volumes:
+      - redis-host5:/data
+    networks:
+      redisnet:
+        ipv4_address: 10.0.0.6
+
+  redis-6:
+    container_name: redis-6
+    build: redis-6
+    command: redis-server /etc/redis/redis.conf
+    ports:
+      - 7005:7005
+    volumes:
+      - redis-host6:/data
+    depends_on:
+      - redis-5
+    networks:
+      redisnet:
+        ipv4_address: 10.0.0.7
+
+  haproxy-1:
+    container_name: haproxy-1
+    build: haproxy
+    ports:
+      - 9000:9000
+    volumes:
+      - redis-haproxy:/data
+    depends_on:
+      - redis-6
+    networks:
+      redisnet:
+        ipv4_address: 10.0.0.8
