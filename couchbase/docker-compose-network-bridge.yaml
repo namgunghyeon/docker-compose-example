@@ -1,0 +1,103 @@
+version: '3.6'
+
+networks:
+  couchbase-net:
+    name: couchbase-net
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.16.101.0/24
+
+volumes:
+  couchbase1:
+  couchbase2:
+  couchbase3:
+
+services:
+  couchbase1:
+    container_name: couchbase1
+    image: couchbase/server:enterprise-6.5.0
+    volumes:
+      - type: volume
+        source: couchbase1
+        target: /opt/couchbase1/var
+    networks:
+      couchbase-net:
+        ipv4_address: 172.16.101.11
+    ports:
+      - 8091:8091
+    ulimits:
+      nproc: 65535
+      core:
+        soft: 100000000
+        hard: 100000000
+      memlock:
+        soft: 100000000
+        hard: 100000000
+      nofile:
+        soft: 40960
+        hard: 40960
+
+  couchbase2:
+    container_name: couchbase2
+    image: couchbase/server:enterprise-6.5.0
+    volumes:
+      - type: volume
+        source: couchbase2
+        target: /opt/couchbase2/var
+    networks:
+      couchbase-net:
+        ipv4_address: 172.16.101.12
+    depends_on:
+      - couchbase1
+    ports:
+      - 18091:8091
+    ulimits:
+      nproc: 65535
+      core:
+        soft: 100000000
+        hard: 100000000
+      memlock:
+        soft: 100000000
+        hard: 100000000
+      nofile:
+        soft: 40960
+        hard: 40960
+
+  couchbase3:
+    container_name: couchbase3
+    image: couchbase/server:enterprise-6.5.0
+    volumes:
+      - type: volume
+        source: couchbase3
+        target: /opt/couchbase3/var
+    networks:
+      couchbase-net:
+        ipv4_address: 172.16.101.13
+    depends_on:
+      - couchbase2
+    ports:
+      - 28091:8091
+    ulimits:
+      nproc: 65535
+      core:
+        soft: 100000000
+        hard: 100000000
+      memlock:
+        soft: 100000000
+        hard: 100000000
+      nofile:
+        soft: 40960
+        hard: 40960
+
+  ubuntu:
+    container_name: ubuntu
+    build: ubuntu
+    command: /usr/sbin/sshd -D
+    ports:
+      - '22000:22'
+    expose:
+      - '22000'
+    networks:
+      couchbase-net:
+        ipv4_address: 172.16.101.15
