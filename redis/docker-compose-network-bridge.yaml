@@ -8,6 +8,7 @@ volumes:
   redis-host5:
   redis-host6:
   redis-haproxy:
+  redis-ubuntu:
 
 networks:
 
@@ -106,6 +107,8 @@ services:
     build: haproxy
     ports:
       - 9000:9000
+      - 5000:5000
+      - 5001:5001
     volumes:
       - redis-haproxy:/data
     depends_on:
@@ -113,3 +116,17 @@ services:
     networks:
       redisnet:
         ipv4_address: 10.0.0.8
+
+  ubuntu-1:
+    container_name: ubuntu-1
+    build: ubuntu
+    ports:
+      - 8080:8080
+      - '2100:22'
+    depends_on:
+      - haproxy-1
+    volumes:
+      - redis-ubuntu:/data
+    networks:
+      redisnet:
+        ipv4_address: 10.0.0.9
