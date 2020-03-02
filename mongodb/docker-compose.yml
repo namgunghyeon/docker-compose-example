@@ -1,0 +1,182 @@
+version: '3.6'
+
+networks:
+  mongodb-net:
+    name: mongodb-net
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 180.16.101.0/24
+
+services:
+
+## Router
+  router01:
+    image: mongo:4.0
+    container_name: rydell-router-01
+    command: mongos --port 27017 --configdb rs-config-server/configsvr01:27017,configsvr02:27017,configsvr03:27017 --bind_ip_all
+    ports:
+      - 27117:27017
+    volumes:
+      - ./scripts:/scripts
+    networks:
+      mongodb-net:
+        ipv4_address: 180.16.101.11
+
+  router02:
+    image: mongo:4.0
+    container_name: rydell-router-02
+    command: mongos --port 27017 --configdb rs-config-server/configsvr01:27017,configsvr02:27017,configsvr03:27017 --bind_ip_all
+    volumes:
+      - ./scripts:/scripts
+    ports:
+      - 27118:27017
+    links:
+      - router01
+    networks:
+      mongodb-net:
+        ipv4_address: 180.16.101.12
+
+## Config Servers
+  configsvr01:
+    image: mongo:4.0
+    container_name: rydell-mongo-config-01
+    command: mongod --port 27017 --configsvr --replSet rs-config-server
+    volumes:
+      - ./scripts:/scripts
+    ports:
+      - 27119:27017
+    links:
+      - shard01-a
+      - shard02-a
+    networks:
+      mongodb-net:
+        ipv4_address: 180.16.101.13
+
+  configsvr02:
+    image: mongo:4.0
+    container_name: rydell-mongo-config-02
+    command: mongod --port 27017 --configsvr --replSet rs-config-server
+    volumes:
+      - ./scripts:/scripts
+    ports:
+      - 27120:27017
+    links:
+      - configsvr01
+    networks:
+      mongodb-net:
+        ipv4_address: 180.16.101.14
+## Shards
+  ## Shards 01
+  shard01-a:
+    image: mongo:4.0
+    container_name: rydell-shard-01-node-a
+    command: mongod --port 27017 --shardsvr --replSet rs-shard-01
+    volumes:
+      - ./scripts:/scripts
+    ports:
+      - 27122:27017
+    links:
+      - shard01-b
+    networks:
+      mongodb-net:
+        ipv4_address: 180.16.101.15
+
+  shard01-b:
+    image: mongo:4.0
+    container_name: rydell-shard-01-node-b
+    command: mongod --port 27017 --shardsvr --replSet rs-shard-01
+    volumes:
+      - ./scripts:/scripts
+    ports:
+      - 27123:27017
+    networks:
+      mongodb-net:
+        ipv4_address: 180.16.101.16
+
+  ## Shards 02
+  shard02-a:
+    image: mongo:4.0
+    container_name: rydell-shard-02-node-a
+    command: mongod --port 27017 --shardsvr --replSet rs-shard-02
+    volumes:
+      - ./scripts:/scripts
+    ports:
+      - 27125:27017
+    links:
+      - shard02-b
+    networks:
+      mongodb-net:
+        ipv4_address: 180.16.101.17
+
+  shard02-b:
+    image: mongo:4.0
+    container_name: rydell-shard-02-node-b
+    command: mongod --port 27017 --shardsvr --replSet rs-shard-02
+    volumes:
+      - ./scripts:/scripts
+    ports:
+      - 27126:27017
+    networks:
+      mongodb-net:
+        ipv4_address: 180.16.101.18
+
+  ## Shards 03
+  shard03-a:
+    image: mongo:4.0
+    container_name: rydell-shard-03-node-a
+    command: mongod --port 27017 --shardsvr --replSet rs-shard-03
+    volumes:
+      - ./scripts:/scripts
+    ports:
+      - 27128:27017
+    links:
+      - shard03-b
+    networks:
+      mongodb-net:
+        ipv4_address: 180.16.101.19
+
+  shard03-b:
+    image: mongo:4.0
+    container_name: rydell-shard-03-node-b
+    command: mongod --port 27017 --shardsvr --replSet rs-shard-03
+    volumes:
+      - ./scripts:/scripts
+    ports:
+      - 27129:27017
+    networks:
+      mongodb-net:
+        ipv4_address: 180.16.101.20
+
+  admin:
+    image: mrvautin/adminmongo:latest
+    container_name: admin
+    environment:
+      - HOST=180.16.101.21
+      - PORT=8080
+      - MONITORING=false
+    ports:
+      - 8080:8080
+    expose:
+      - 8080
+    networks:
+      mongodb-net:
+        ipv4_address: 180.16.101.21
+
+  admin2:
+    image: mongoclient/mongoclient:2.2.0
+    container_name: admin2
+    environment:
+      - HOST=180.16.101.22
+      - PORT=8081
+      - MONITORING=false
+    ports:
+      - 8081:8081
+    expose:
+      - 8081
+    networks:
+      mongodb-net:
+        ipv4_address: 180.16.101.22
+
+
+
